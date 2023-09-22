@@ -25,7 +25,16 @@ def workcenter_fig(data):
     fig = px.bar(data, y="inventory")
     fig.update_xaxes(showticklabels=False)
     fig.update_xaxes(title=None)
-    fig.update_yaxes(range=[0, 50])
+    fig.update_yaxes(range=[0, 10])
+
+    return fig
+
+
+def completed_fig(data):
+    """Create special figure for showing completed work units."""
+    fig = px.bar(data, y="inventory", color_discrete_sequence=["green"])
+    fig.update_xaxes(showticklabels=False, title=None)
+    fig.update_yaxes(range=[0, 40], title_text="completed")
 
     return fig
 
@@ -53,7 +62,9 @@ for num in range(total_workcenters):
                     [
                         html.Div(
                             dcc.Graph(
-                                figure=workcenter_fig(workcenter0),
+                                figure=completed_fig(workcenter3)
+                                if num == 3
+                                else workcenter_fig(workcenter0),
                             ),
                             id=f"workcenter{num}",
                         )
@@ -86,17 +97,25 @@ app.layout = dbc.Container(
                 ),
             ],
         ),
+        html.Div(
+            dbc.Button("Reset", color="danger", className="me-1", id="reset"),
+            className="text-center",
+        ),
         dbc.Row(button_row),
         dbc.Row(
             [
-                dbc.Col(html.Div(id="transfer_0to1"), width={"offset": 2}),
+                dbc.Col(
+                    html.Div(id="transfer_0to1"),
+                    width={"offset": 3},
+                ),
                 dbc.Col(
                     html.Div(id="transfer_1to2"),
                 ),
                 dbc.Col(
                     html.Div(id="transfer_2to3"),
                 ),
-            ]
+            ],
+            justify="center",
         ),
     ]
 )
@@ -224,11 +243,55 @@ def dowork3(n_clicks):
 
     return (
         dcc.Graph(figure=workcenter_fig(workcenter2)),
-        dcc.Graph(figure=workcenter_fig(workcenter3)),
+        dcc.Graph(figure=completed_fig(workcenter3)),
         f"Completed {new_roll} unit(s)!" if new_roll is not None else None,
         f"Transfered {transfer} -->" if new_roll is not None else None,
         True,
         False,
+    )
+
+
+@callback(
+    Output("workcenter0", "children", allow_duplicate=True),
+    Output("workcenter1", "children", allow_duplicate=True),
+    Output("workcenter2", "children", allow_duplicate=True),
+    Output("workcenter3", "children", allow_duplicate=True),
+    Output("work_value0", "children", allow_duplicate=True),
+    Output("work_value1", "children", allow_duplicate=True),
+    Output("work_value2", "children", allow_duplicate=True),
+    Output("work_value3", "children", allow_duplicate=True),
+    Output("transfer_0to1", "children", allow_duplicate=True),
+    Output("transfer_1to2", "children", allow_duplicate=True),
+    Output("transfer_2to3", "children", allow_duplicate=True),
+    Output("work0", "disabled", allow_duplicate=True),
+    Output("work1", "disabled", allow_duplicate=True),
+    Output("work2", "disabled", allow_duplicate=True),
+    Output("work3", "disabled", allow_duplicate=True),
+    Input("reset", "n_clicks"),
+    prevent_initial_call=True,
+)
+def reset(n_clicks):
+    """Reset all the work values and text."""
+    if n_clicks != 0:
+        for workcenter in workcenters:
+            workcenter["inventory"] = 0
+
+    return (
+        dcc.Graph(figure=workcenter_fig(workcenter0)),
+        dcc.Graph(figure=workcenter_fig(workcenter1)),
+        dcc.Graph(figure=workcenter_fig(workcenter2)),
+        dcc.Graph(figure=completed_fig(workcenter3)),
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        False,
+        True,
+        True,
+        True,
     )
 
 

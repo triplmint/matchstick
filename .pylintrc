@@ -6,9 +6,9 @@ load-plugins=pylint.extensions.docparams
 disable = fixme, unnecessary-pass, line-too-long,
     # These are all checked by flake8 so we'll let that take care of these. We want to turn them
     # of in testing areas and pylint doesn't like to do per-file-ignores like flake8 does
-    missing-module-docstring, missing-class-docstring, missing-function-docstring
+    missing-module-docstring, missing-class-docstring,
     # These are taken care of by isort
-    wrong-import-position, wrong-import-order
+    wrong-import-order
 
 [FORMAT]
 good-names=i,j,k,e,f,x,y
