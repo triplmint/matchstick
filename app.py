@@ -63,7 +63,8 @@ for num in range(total_workcenters):
                     [html.Div(id=f"work_value{num}", className="text-center")],
                     align="end",
                 ),
-            ]
+            ],
+            width=3,
         )
     )
 
@@ -77,12 +78,26 @@ app.layout = dbc.Container(
                     className="text-primary text-center fs-3",
                 ),
                 html.Div(
-                    "Each work center can 'do' between 1 and 6 units of work. However, work can only be passed down the line if there is enough inventory in the previous work center.",
+                    "Each work center can do between 1 and 6 units of work.\n "
+                    "However, work can only be passed down the line if there is enough inventory in the previous work center.\n"
+                    "This is a 'perfectly balanced' system. Line balancing would tell us that the average throughput should be 3.5 units per cycle.\n"
+                    "Is this what happens?\n",
                     className="text-center",
+                ),
+            ],
+        ),
+        dbc.Row(button_row),
+        dbc.Row(
+            [
+                dbc.Col(html.Div(id="transfer_0to1"), width={"offset": 2}),
+                dbc.Col(
+                    html.Div(id="transfer_1to2"),
+                ),
+                dbc.Col(
+                    html.Div(id="transfer_2to3"),
                 ),
             ]
         ),
-        dbc.Row(button_row),
     ]
 )
 
@@ -95,10 +110,10 @@ app.layout = dbc.Container(
     Input("work0", "n_clicks"),
     prevent_initial_call=True,
 )
-def work0(n):
+def dowork0(n_clicks):
     """Do some work at workcenter 0."""
     new_roll = None
-    if n != 0:
+    if n_clicks != 0:
         new_roll = np.random.randint(1, 7)
         workcenter0["inventory"] += new_roll
 
@@ -116,29 +131,32 @@ def work0(n):
     Output("workcenter0", "children", allow_duplicate=True),
     Output("workcenter1", "children"),
     Output("work_value1", "children"),
+    Output("transfer_0to1", "children"),
     Output("work1", "disabled", allow_duplicate=True),
     Output("work2", "disabled"),
     Input("work1", "n_clicks"),
     prevent_initial_call=True,
 )
-def work1(n):
+def dowork1(n_clicks):
     """Do some work at workcenter 1."""
     new_roll = None
-    if n != 0:
+    if n_clicks != 0:
         new_roll = np.random.randint(1, 7)
 
         # Only can pull inventory from workcenter 1 if there is enough inventory there
         if new_roll <= workcenter0["inventory"][0]:
-            workcenter1["inventory"] += new_roll
-            workcenter0["inventory"] -= new_roll
+            transfer = new_roll
         else:
-            workcenter1["inventory"] = workcenter0["inventory"]
-            workcenter0["inventory"] = 0
+            transfer = workcenter0["inventory"][0]
+
+        workcenter1["inventory"] += transfer
+        workcenter0["inventory"] -= transfer
 
     return (
         dcc.Graph(figure=workcenter_fig(workcenter0)),
         dcc.Graph(figure=workcenter_fig(workcenter1)),
         f"Did {new_roll} unit(s) of work" if new_roll is not None else None,
+        f"Transfered {transfer} -->" if new_roll is not None else None,
         True,
         False,
     )
@@ -148,29 +166,32 @@ def work1(n):
     Output("workcenter1", "children", allow_duplicate=True),
     Output("workcenter2", "children"),
     Output("work_value2", "children"),
+    Output("transfer_1to2", "children"),
     Output("work2", "disabled", allow_duplicate=True),
     Output("work3", "disabled"),
     Input("work2", "n_clicks"),
     prevent_initial_call=True,
 )
-def work2(n):
+def dowork2(n_clicks):
     """Do some work in workcenter 2."""
     new_roll = None
-    if n != 0:
+    if n_clicks != 0:
         new_roll = np.random.randint(1, 7)
 
         # Only can pull inventory from workcenter 1 if there is enough inventory there
         if new_roll <= workcenter1["inventory"][0]:
-            workcenter2["inventory"] += new_roll
-            workcenter1["inventory"] -= new_roll
+            transfer = new_roll
         else:
-            workcenter2["inventory"] = workcenter0["inventory"]
-            workcenter1["inventory"] = 0
+            transfer = workcenter1["inventory"][0]
+
+        workcenter2["inventory"] += transfer
+        workcenter1["inventory"] -= transfer
 
     return (
         dcc.Graph(figure=workcenter_fig(workcenter1)),
         dcc.Graph(figure=workcenter_fig(workcenter2)),
         f"Did {new_roll} unit(s) of work" if new_roll is not None else None,
+        f"Transfered {transfer} -->" if new_roll is not None else None,
         True,
         False,
     )
@@ -180,29 +201,32 @@ def work2(n):
     Output("workcenter2", "children", allow_duplicate=True),
     Output("workcenter3", "children"),
     Output("work_value3", "children"),
+    Output("transfer_2to3", "children"),
     Output("work3", "disabled", allow_duplicate=True),
     Output("work0", "disabled", allow_duplicate=True),
     Input("work3", "n_clicks"),
     prevent_initial_call=True,
 )
-def work3(n):
+def dowork3(n_clicks):
     """Do some work at workcenter 3."""
     new_roll = None
-    if n != 0:
+    if n_clicks != 0:
         new_roll = np.random.randint(1, 7)
 
         # Only can pull inventory from workcenter 1 if there is enough inventory there
-        if new_roll <= workcenter3["inventory"][0]:
-            workcenter3["inventory"] += new_roll
-            workcenter2["inventory"] -= new_roll
+        if new_roll <= workcenter2["inventory"][0]:
+            transfer = new_roll
         else:
-            workcenter3["inventory"] = workcenter0["inventory"]
-            workcenter2["inventory"] = 0
+            transfer = workcenter2["inventory"][0]
+
+        workcenter3["inventory"] += transfer
+        workcenter2["inventory"] -= transfer
 
     return (
         dcc.Graph(figure=workcenter_fig(workcenter2)),
         dcc.Graph(figure=workcenter_fig(workcenter3)),
-        f"Did {new_roll} unit(s) of work" if new_roll is not None else None,
+        f"Completed {new_roll} unit(s)!" if new_roll is not None else None,
+        f"Transfered {transfer} -->" if new_roll is not None else None,
         True,
         False,
     )
