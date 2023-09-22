@@ -1,0 +1,36 @@
+{
+    "flake8.importStrategy": "fromEnvironment",
+    "flake8.args": [
+        "--max-line-length=200",
+        "--per-file-ignores=tests/*.py:D",
+        "--ignore=E203,W503"
+    ],
+    "pylint.args": [
+        "--ignore=docs",
+        "--load-plugins=pylint.extensions.docparams",
+        "--disable=fixme,unnecessary-pass,line-too-long,missing-module-docstring,missing-class-docstring,missing-function-docstring",
+        "--good-names=i,j,k,e,f,x,y"
+    ],
+    "pylint.importStrategy": "fromEnvironment",
+    "pylint.severity": {
+        "convention": "Information",
+        "error": "Error",
+        "fatal": "Error",
+        "refactor": "Information",
+        "warning": "Warning",
+        "info": "Information"
+    },
+    "isort.args": [
+        "--profile",
+        "black"
+    ],
+    "isort.importStrategy": "fromEnvironment",
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter",
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": true
+        }
+    },
+    "json.format.enable": false,
+}

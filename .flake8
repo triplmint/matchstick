@@ -1,0 +1,14 @@
+[flake8]
+docstring-convention = numpy
+max-line-length = 200
+exclude =
+    __init__.py
+per-file-ignores =
+    # Don't require docstrings in tests
+    tests/*.py:D
+    # Don't require docstrings in __init__ modules
+    __init__.py:D
+ignore =
+    # black and flake8 disagree
+    E203
+    W503
