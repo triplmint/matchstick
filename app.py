@@ -8,6 +8,7 @@ from dash import Dash, Input, Output, callback, dcc, html
 # Statistical fluctuation size
 low_roll = 1
 high_roll = 6
+avg_roll = np.average([low_roll, high_roll])
 
 # Workcenter Data
 workcenters = []
@@ -26,6 +27,10 @@ performance0_avg = []
 performance1_avg = []
 performance2_avg = []
 performance3_avg = []
+quota_offset0 = [0]
+quota_offset1 = [0]
+quota_offset2 = [0]
+quota_offset3 = [0]
 
 # Initialize the app - incorporate a Dash Bootstrap theme
 external_stylesheets = [dbc.themes.BOOTSTRAP]
@@ -67,9 +72,18 @@ def completed_stats(data):
     return fig
 
 
+def quota_fig(data):
+    fig = px.scatter(data, color_discrete_sequence=["purple"])
+    fig.update_xaxes(title=None)
+    fig.update_yaxes(title=None)
+    fig.update_layout(showlegend=False)
+    return fig
+
+
 # Build the button and figure rows
 button_row = []
-stats_row = []
+avgs_row = []
+quota_row = []
 for num, workcenter in enumerate(workcenters):
     button_row.append(
         dbc.Col(
@@ -111,7 +125,7 @@ for num, workcenter in enumerate(workcenters):
             width=3,
         )
     )
-    stats_row.append(
+    avgs_row.append(
         dbc.Col(
             [
                 dbc.Row(
@@ -123,6 +137,21 @@ for num, workcenter in enumerate(workcenters):
                                 else workcenter_stats(performance0),
                             ),
                             id=f"performance_fig{num}",
+                        )
+                    ]
+                ),
+            ],
+            width=3,
+        )
+    )
+    quota_row.append(
+        dbc.Col(
+            [
+                dbc.Row(
+                    [
+                        html.Div(
+                            dcc.Graph(figure=quota_fig(quota_offset0)),
+                            id=f"quota_fig{num}",
                         )
                     ]
                 ),
@@ -167,13 +196,8 @@ app.layout = dbc.Container(
         html.Div(
             dbc.Accordion(
                 [
-                    dbc.AccordionItem(
-                        [
-                            html.P("Rolling Averages", className="text-center"),
-                            dbc.Row(stats_row),
-                        ],
-                        title="Workcenter Stats",
-                    )
+                    dbc.AccordionItem([dbc.Row(avgs_row)], title="Rolling Averages"),
+                    dbc.AccordionItem([dbc.Row(quota_row)], title="Cummulative Quotas"),
                 ],
                 start_collapsed=True,
             )
@@ -186,6 +210,7 @@ app.layout = dbc.Container(
     Output("workcenter0", "children"),
     Output("work_value0", "children"),
     Output("performance_fig0", "children"),
+    Output("quota_fig0", "children"),
     Output("work_button0", "disabled"),
     Output("work_button1", "disabled"),
     Input("work_button0", "n_clicks"),
@@ -201,12 +226,17 @@ def dowork0(n_clicks):
     performance0.append(new_roll)
     performance0_avg.append(np.average(performance0))
 
+    # The quotas are cummulative, so add the offset to the old value
+    old_quota_value = quota_offset0[-1]
+    quota_offset0.append(old_quota_value + (performance0[-1] - avg_roll))
+
     return (
         dcc.Graph(
             figure=workcenter_fig(workcenter0),
         ),
         f"Rolled {new_roll} unit(s) of work" if new_roll is not None else None,
         dcc.Graph(figure=workcenter_stats(performance0_avg)),
+        dcc.Graph(figure=quota_fig(quota_offset0)),
         True,
         False,
     )
@@ -218,6 +248,7 @@ def dowork0(n_clicks):
     Output("work_value1", "children"),
     Output("transfer_value0", "children"),
     Output("performance_fig1", "children"),
+    Output("quota_fig1", "children"),
     Output("work_button1", "disabled", allow_duplicate=True),
     Output("work_button2", "disabled"),
     Input("work_button1", "n_clicks"),
@@ -240,12 +271,17 @@ def dowork1(n_clicks):
         performance1.append(transfer)
         performance1_avg.append(np.average(performance1))
 
+        # The quotas are cummulative, so add the offset to the old value
+        old_quota_value = quota_offset1[-1]
+        quota_offset1.append(old_quota_value + (performance1[-1] - avg_roll))
+
     return (
         dcc.Graph(figure=workcenter_fig(workcenter0)),
         dcc.Graph(figure=workcenter_fig(workcenter1)),
         f"Rolled {new_roll} unit(s) of work" if new_roll is not None else None,
         f"Transfered {transfer} -->" if new_roll is not None else None,
         dcc.Graph(figure=workcenter_stats(performance1_avg)),
+        dcc.Graph(figure=quota_fig(quota_offset1)),
         True,
         False,
     )
@@ -257,6 +293,7 @@ def dowork1(n_clicks):
     Output("work_value2", "children"),
     Output("transfer_value1", "children"),
     Output("performance_fig2", "children"),
+    Output("quota_fig2", "children"),
     Output("work_button2", "disabled", allow_duplicate=True),
     Output("work_button3", "disabled"),
     Input("work_button2", "n_clicks"),
@@ -279,12 +316,17 @@ def dowork2(n_clicks):
         performance2.append(transfer)
         performance2_avg.append(np.average(performance2))
 
+        # The quotas are cummulative, so add the offset to the old value
+        old_quota_value = quota_offset2[-1]
+        quota_offset2.append(old_quota_value + (performance2[-1] - avg_roll))
+
     return (
         dcc.Graph(figure=workcenter_fig(workcenter1)),
         dcc.Graph(figure=workcenter_fig(workcenter2)),
         f"Rolled {new_roll} unit(s) of work" if new_roll is not None else None,
         f"Transfered {transfer} -->" if new_roll is not None else None,
         dcc.Graph(figure=workcenter_stats(performance2_avg)),
+        dcc.Graph(figure=quota_fig(quota_offset2)),
         True,
         False,
     )
@@ -297,6 +339,7 @@ def dowork2(n_clicks):
     Output("transfer_value2", "children"),
     Output("transfer_value3", "children"),
     Output("performance_fig3", "children"),
+    Output("quota_fig3", "children"),
     Output("work_button3", "disabled", allow_duplicate=True),
     Output("work_button0", "disabled", allow_duplicate=True),
     Input("work_button3", "n_clicks"),
@@ -319,6 +362,10 @@ def dowork3(n_clicks):
         performance3.append(transfer)
         performance3_avg.append(np.average(performance3))
 
+        # The quotas are cummulative, so add the offset to the old value
+        old_quota_value = quota_offset3[-1]
+        quota_offset3.append(old_quota_value + (performance3[-1] - avg_roll))
+
     return (
         dcc.Graph(figure=workcenter_fig(workcenter2)),
         dcc.Graph(figure=completed_fig(workcenter3)),
@@ -326,6 +373,7 @@ def dowork3(n_clicks):
         f"Transfered {transfer} -->" if new_roll is not None else None,
         f"Completed {transfer} unit(s)!" if new_roll is not None else None,
         dcc.Graph(figure=completed_stats(performance3_avg)),
+        dcc.Graph(figure=quota_fig(quota_offset3)),
         True,
         False,
     )
@@ -340,6 +388,10 @@ def dowork3(n_clicks):
     Output("performance_fig1", "children", allow_duplicate=True),
     Output("performance_fig2", "children", allow_duplicate=True),
     Output("performance_fig3", "children", allow_duplicate=True),
+    Output("quota_fig0", "children", allow_duplicate=True),
+    Output("quota_fig1", "children", allow_duplicate=True),
+    Output("quota_fig2", "children", allow_duplicate=True),
+    Output("quota_fig3", "children", allow_duplicate=True),
     Output("work_value0", "children", allow_duplicate=True),
     Output("work_value1", "children", allow_duplicate=True),
     Output("work_value2", "children", allow_duplicate=True),
@@ -361,14 +413,23 @@ def reset(n_clicks):
         for workcenter in workcenters:
             workcenter["inventory"] = 0
 
-        performance0 = []
-        performance1 = []
-        performance2 = []
-        performance3 = []
-        performance0_avg = []
-        performance1_avg = []
-        performance2_avg = []
-        performance3_avg = []
+        performance0.clear()
+        performance1.clear()
+        performance2.clear()
+        performance3.clear()
+        performance0_avg.clear()
+        performance1_avg.clear()
+        performance2_avg.clear()
+        performance3_avg.clear()
+
+        quota_offset0.clear()
+        quota_offset1.clear()
+        quota_offset2.clear()
+        quota_offset3.clear()
+        quota_offset0.append(0)
+        quota_offset1.append(0)
+        quota_offset2.append(0)
+        quota_offset3.append(0)
 
     return (
         dcc.Graph(figure=workcenter_fig(workcenter0)),
@@ -379,6 +440,10 @@ def reset(n_clicks):
         dcc.Graph(figure=workcenter_stats(performance1_avg)),
         dcc.Graph(figure=workcenter_stats(performance2_avg)),
         dcc.Graph(figure=completed_stats(performance3_avg)),
+        dcc.Graph(figure=quota_fig(quota_offset0)),
+        dcc.Graph(figure=quota_fig(quota_offset1)),
+        dcc.Graph(figure=quota_fig(quota_offset2)),
+        dcc.Graph(figure=quota_fig(quota_offset3)),
         None,
         None,
         None,
